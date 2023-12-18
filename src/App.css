@@ -1,0 +1,40 @@
+.app {
+  padding: 20px;
+  font-size: 1.5em;
+}
+
+.app-logo {
+  width: 200px;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  width: 700px;
+}
+
+.form-field {
+  display: felx;
+  flex-direction: row;
+  margin-top: 20px;
+}
+
+label {
+  display: block;
+  width: 100px;
+  font-weight: bold;
+}
+
+input {
+  height: 40px;
+  width: 300px;
+  font-size: 1em;
+}
+
+.short-input {
+  width: 180px;
+}
+
+.long-input {
+  width: 600px;
+}
