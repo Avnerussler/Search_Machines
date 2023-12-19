@@ -2,7 +2,27 @@ import { ChangeEvent, useCallback, useEffect, useState } from 'react';
 import './App.css';
 import logo from './atlas-logo-rgb.svg';
 import { AdTemplate, EAdTemplate } from './models/AdTemplate';
-import { Input } from './components/Input';
+import { Template } from './components/Template';
+import { Form } from './components/Form';
+import { IFormInput } from './models/Form';
+import { GeneratedAD } from './components/GeneratedAD';
+import {
+ MAX_DESCRIPTIONS_CHARACTERS,
+ MAX_HEADLINE_CHARACTERS,
+ MAX_PATH_CHARACTERS,
+ curlyBracesContentExtractorRegex,
+ removeCharactersSquareBracketsRegex,
+} from './utils';
+
+//  I didn't know of I allowed to change the defaultTemplate object.
+//  I will change it to be like this:
+//    [{
+//    name:'Headline1',
+//    value:"{airline} deals[. Save Big]",
+//    errors:"",
+//    type:short_string
+//  }]
+//  in this way you can track the error and decide the type of field in one place
 
 const defaultTemplate: AdTemplate = {
  Headline1: '{airline} deals[. Save Big]',
@@ -12,16 +32,6 @@ const defaultTemplate: AdTemplate = {
  Path2: '[to_]{destination}',
 };
 
-interface IFormInput {
- [key: string]: string | number;
-}
-
-const curlyBracesContentExtractorRegex = /(?:\{([^{}]+)\})/g;
-const removeCharactersSquareBracketsRegex = /\[.*?\]/g;
-const maxHeadlineCharacters = 30;
-const maxPathCharacters = 15;
-const maxDescriptionsCharacters = 80;
-
 function App() {
  const [template, setTemplate] = useState<AdTemplate>(defaultTemplate);
  const [parseWords, setParsWords] = useState<IFormInput>({});
@@ -30,13 +40,13 @@ function App() {
  const [errors, setErrors] = useState<{ [key: string]: string | boolean }>({});
 
  const getParseParameters = useCallback((template: AdTemplate) => {
-  const parsedWords: IFormInput = {};
+  const parsedWordsObj: IFormInput = {};
   const convertTemplateToString = Object.values(template).join(' ');
   let match;
   while ((match = curlyBracesContentExtractorRegex.exec(convertTemplateToString)) !== null) {
-   parsedWords[match[1]] = match.index;
+   parsedWordsObj[match[1]] = match.index;
   }
-  return parsedWords;
+  return parsedWordsObj;
  }, []);
 
  const getParsedTemplate = (template: AdTemplate, formInputs: IFormInput) => {
@@ -51,22 +61,22 @@ function App() {
   return JSON.parse(templateString);
  };
 
- const getParsedValue = (name: string, value: string) => {
+ const getParsedValue = (name: EAdTemplate, value: string) => {
   switch (name) {
    case EAdTemplate.HEADLINE1:
    case EAdTemplate.HEADLINE2:
-    if (value.length > maxHeadlineCharacters) {
+    if (value.length > MAX_HEADLINE_CHARACTERS) {
      return value.replace(removeCharactersSquareBracketsRegex, '');
     }
     return value;
    case EAdTemplate.PATH1:
    case EAdTemplate.PATH2:
-    if (value.length > maxPathCharacters) {
+    if (value.length > MAX_PATH_CHARACTERS) {
      return value.replace(removeCharactersSquareBracketsRegex, '');
     }
     return value;
    case EAdTemplate.DESCRIPTION1:
-    if (value.length > maxDescriptionsCharacters) {
+    if (value.length > MAX_DESCRIPTIONS_CHARACTERS) {
      return value.replace(removeCharactersSquareBracketsRegex, '');
     }
     return value;
@@ -75,22 +85,22 @@ function App() {
   }
  };
 
- const getError = (name: string, value: string) => {
+ const isMaxLengthError = (name: EAdTemplate, value: string) => {
   switch (name) {
    case EAdTemplate.HEADLINE1:
    case EAdTemplate.HEADLINE2:
-    if (value.length > maxHeadlineCharacters) {
+    if (value.length > MAX_HEADLINE_CHARACTERS) {
      return true;
     }
     return false;
    case EAdTemplate.PATH1:
    case EAdTemplate.PATH2:
-    if (value.length > maxPathCharacters) {
+    if (value.length > MAX_PATH_CHARACTERS) {
      return true;
     }
     return false;
    case EAdTemplate.DESCRIPTION1:
-    if (value.length > maxDescriptionsCharacters) {
+    if (value.length > MAX_DESCRIPTIONS_CHARACTERS) {
      return true;
     }
     return false;
@@ -99,6 +109,7 @@ function App() {
     return false;
   }
  };
+
  const handelFormChange = (e: ChangeEvent<HTMLInputElement>) => {
   const value = e.target.value;
   const name = e.target.name;
@@ -107,10 +118,10 @@ function App() {
 
  const handelTemplateChange = (e: ChangeEvent<HTMLInputElement>) => {
   let value = e.target.value;
-  const name = e.target.name;
+  const name = e.target.name as EAdTemplate;
 
   value = getParsedValue(name, value);
-  const error = getError(name, value);
+  const error = isMaxLengthError(name, value);
 
   setErrors({ ...errors, [name]: error });
 
@@ -119,6 +130,7 @@ function App() {
 
  useEffect(() => {
   const words = getParseParameters(template);
+
   setParsWords({ ...words });
  }, [getParseParameters, template]);
 
@@ -131,68 +143,9 @@ function App() {
   <div className='app'>
    <img src={logo} className='app-logo' alt='logo' />
    <div className='container'>
-    <div className='ad-template'>
-     <form>
-      {Object.keys(template).map(templateKey => {
-       return (
-        <div key={templateKey}>
-         {templateKey !== EAdTemplate.PATH1 && templateKey !== EAdTemplate.PATH2 && (
-          <Input
-           label={templateKey}
-           name={templateKey}
-           value={template[templateKey as keyof AdTemplate]}
-           onChange={handelTemplateChange}
-           errors={errors}
-           className='form-field'
-          />
-         )}
-        </div>
-       );
-      })}
-      <div className='paths'>
-       <Input
-        label={EAdTemplate.PATH1}
-        name={EAdTemplate.PATH1}
-        value={template[EAdTemplate.PATH1 as keyof AdTemplate]}
-        onChange={handelTemplateChange}
-        errors={errors}
-        className='form-field'
-       />
-       <div>/</div>
-       <Input
-        label={EAdTemplate.PATH2}
-        name={EAdTemplate.PATH2}
-        value={template[EAdTemplate.PATH2 as keyof AdTemplate]}
-        onChange={handelTemplateChange}
-        errors={errors}
-        className='form-field'
-       />
-      </div>
-     </form>
-    </div>
-    <div className='inputs'>
-     {Object.keys(parseWords).map((parseWordsKey: string) => (
-      <Input
-       value={formInputs[parseWordsKey]}
-       name={parseWordsKey}
-       htmlFor={parseWordsKey}
-       id={parseWordsKey}
-       label={parseWordsKey}
-       key={parseWordsKey}
-       onChange={handelFormChange}
-      />
-     ))}
-    </div>
-    <div className='results'>
-     <div className='headline1'>{parseTemplate?.[EAdTemplate.HEADLINE1]}</div>
-     <div className='headline2'>{parseTemplate?.[EAdTemplate.HEADLINE2]}</div>
-     <div className='description'>{parseTemplate?.[EAdTemplate.DESCRIPTION1]}</div>
-     <div className='paths'>
-      <div className='path1'>{parseTemplate?.[EAdTemplate.PATH1]}</div>
-      &nbsp;/ &nbsp;
-      <div className='path2'>{parseTemplate?.[EAdTemplate.PATH2]}</div>
-     </div>
-    </div>
+    <Template template={template} errors={errors} onChange={handelTemplateChange} />
+    <Form onChange={handelFormChange} formInputs={formInputs} parseWords={parseWords} />
+    <GeneratedAD parseTemplate={parseTemplate} />
    </div>
   </div>
  );
