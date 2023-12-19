@@ -144,7 +144,10 @@ function App() {
    <img src={logo} className='app-logo' alt='logo' />
    <div className='container'>
     <Template template={template} errors={errors} onChange={handelTemplateChange} />
+    <div className='divider'></div>
     <Form onChange={handelFormChange} formInputs={formInputs} parseWords={parseWords} />
+    <div className='divider'></div>
+
     <GeneratedAD parseTemplate={parseTemplate} />
    </div>
   </div>

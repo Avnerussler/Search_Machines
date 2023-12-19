@@ -34,7 +34,7 @@ export const Template = ({ onChange, errors, template }: ITemplate) => (
      errors={errors}
      className='form-field'
     />
-    <div>/</div>
+    <div className='slash'></div>
     <Input
      label={EAdTemplate.PATH2}
      name={EAdTemplate.PATH2}

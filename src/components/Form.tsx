@@ -19,6 +19,7 @@ export const Form = ({ parseWords, formInputs, onChange }: FromProps) => (
     label={parseWordsKey}
     key={parseWordsKey}
     onChange={onChange}
+    className='form-field'
    />
   ))}
  </div>
